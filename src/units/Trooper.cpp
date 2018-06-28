@@ -38,7 +38,7 @@ void Trooper::init() {
     owner->incrementUnits(itemID);
 
     numWeapons = 1;
-    bulletType = Bullet_ShellSmall;
+    bulletType = Bullet_SmallRocket;
 
     graphicID = ObjPic_Trooper;
     graphic = pGFXManager->getObjPic(graphicID,getOwner()->getHouseID());
@@ -53,7 +53,6 @@ Trooper::~Trooper() {
 bool Trooper::canAttack(const ObjectBase* object) const {
     if ((object != nullptr)
         && ((object->getOwner()->getTeam() != owner->getTeam()) || (object->getItemID() == Unit_Sandworm))
-        && (object->getItemID() != Unit_Carryall)
         && object->isVisible(getOwner()->getTeam()))
     {
         return true;

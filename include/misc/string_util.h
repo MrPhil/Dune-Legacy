@@ -24,13 +24,24 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <functional>
 #include <sstream>
+
+
+#if defined(_MSC_VER) && (_MSC_VER >= 1600) /* VS 2010 and above */
+#include <sal.h>
+#define PRINTF_FORMAT_STRING _Printf_format_string_
+#define PRINTF_VARARG_FUNC( fmtargnumber )
+#elif defined(__GNUC__)
+#define PRINTF_FORMAT_STRING
+#define PRINTF_VARARG_FUNC( fmtargnumber ) __attribute__ (( format( __printf__, fmtargnumber, fmtargnumber+1 )))
+#endif
 
 bool splitString(const std::string& parseString, unsigned int numStringPointers,...);
 
 std::vector<std::string> splitString(const std::string& parseString, const std::string& delim = ",", bool keepDelim = false);
 
-std::string replaceAll(std::string str, const std::map<std::string, std::string>& replacementMap);
+std::string replaceAll(const std::string& str, const std::map<std::string, std::string>& replacementMap);
 
 
 template<typename T>
@@ -97,6 +108,16 @@ inline int stringCaseInsensitiveCompare(const std::string& str1, const std::stri
     return tolower(*pStr1) - tolower(*pStr2);
 }
 
+/**
+    This function splits a text into multiple lines such that each line is no longer than linewidth pixels. The function pGetTextWidth is
+    used to determine how width a given text will be in pixels.
+    \param  text            the text to split; any hard line breaks '\n' are also considered
+    \param  linewidth       the maximum width of a line in pixel
+    \param  pGetTextWidth   this function is used to determine the width in pixels of a given string. Its return value shall specify the width in pixels of its parameter.
+    \return the returned vector contains the complete text, split into multiple lines.
+*/
+std::vector<std::string> greedyWordWrap(const std::string& text, int linewidth, std::function<int (const std::string&)> pGetTextWidth);
+
 std::string convertCP850ToISO8859_1(const std::string& text);
 
 std::string convertUTF8ToISO8859_1(const std::string& text);
@@ -107,6 +128,6 @@ std::string convertUTF8ToISO8859_1(const std::string& text);
     \param text Text to decode
     \return The decoded text
 */
-std::string decodeString(std::string text);
+std::string decodeString(const std::string& text);
 
 #endif // STRING_UTIL_H

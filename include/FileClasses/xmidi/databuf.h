@@ -400,14 +400,11 @@ public:
     };
 
     virtual unsigned int getSize() {
-        unsigned int oldPos = getPos();
-        unsigned int size = SDL_RWseek(rwop,0,SEEK_END);
-        SDL_RWseek(rwop,oldPos,SEEK_SET);
-        return size;
+        return static_cast<unsigned int>(SDL_RWsize(rwop));
     };
 
     virtual unsigned int getPos() {
-        return SDL_RWtell(rwop);
+        return static_cast<unsigned int>(SDL_RWtell(rwop));
     };
 };
 

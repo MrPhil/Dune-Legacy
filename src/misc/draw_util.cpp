@@ -182,17 +182,22 @@ SDL_Surface* renderReadSurface(SDL_Renderer* renderer) {
     SDL_Rect rendererSize = getRendererSize();
     SDL_Surface* pScreen = SDL_CreateRGBSurface(0, rendererSize.w, rendererSize.h, SCREEN_BPP, RMASK, GMASK, BMASK, AMASK);
     if((pScreen == nullptr) || (SDL_RenderReadPixels(renderer, nullptr, SCREEN_FORMAT, pScreen->pixels, pScreen->pitch) != 0)) {
-        fprintf(stderr,"renderReadSurface() failed: %s\n", SDL_GetError());
+        SDL_Log("Warning: renderReadSurface() failed: %s", SDL_GetError());
         SDL_FreeSurface(pScreen);
         return nullptr;
     }
 
-    // Fix bug in SDL2 OpenGL Backend (SDL bug #2740)
-    SDL_RendererInfo rendererInfo;
-    SDL_GetRendererInfo(renderer, &rendererInfo);
-    if(strcmp(rendererInfo.name, "opengl") == 0) {
-        if(SDL_GetRenderTarget(renderer) != nullptr) {
-            pScreen = flipHSurface(pScreen, true);
+    SDL_version version;
+    SDL_GetVersion(&version);
+
+    if((version.major <= 2) && (version.minor <= 0) && (version.patch <= 4)) {
+        // Fix bug in SDL2 OpenGL Backend (SDL bug #2740 and #3350) in SDL version <= 2.0.4
+        SDL_RendererInfo rendererInfo;
+        SDL_GetRendererInfo(renderer, &rendererInfo);
+        if(strcmp(rendererInfo.name, "opengl") == 0) {
+            if(SDL_GetRenderTarget(renderer) != nullptr) {
+                pScreen = flipHSurface(pScreen, true);
+            }
         }
     }
 
@@ -275,6 +280,10 @@ SDL_Texture* convertSurfaceToTexture(SDL_Surface* inSurface, bool freeSrcSurface
             SDL_FreeSurface(inSurface);
         }
         return nullptr;
+    }
+
+    if(inSurface->w > 2048 || inSurface->h > 2048) {
+        SDL_Log("Warning: Size of texture created in convertSurfaceToTexture is %dx%d; may exceed hardware limits on older GPUs!", inSurface->w, inSurface->h);
     }
 
     SDL_Texture* pTexture;

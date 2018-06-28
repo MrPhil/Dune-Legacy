@@ -49,6 +49,7 @@ public:
         for exactly one unit.
         Example:<br>
             [structure name]<br>
+            Enabled = true<br>
             HitPoints = 500<br>
             Price = 300<br>
             Power = 10<br>
@@ -58,6 +59,7 @@ public:
             InfSpawnProp = 45<br>
             <br>
             [unit name]
+            Enabled = true<br>
             HitPoints = 100<br>
             Price = 100<br>
             ViewRange = 5<br>
@@ -70,7 +72,7 @@ public:
             InfSpawnProp = 45<br>
         \param filename the INI-File to load.
     */
-    void loadFromINIFile(std::string filename);
+    void loadFromINIFile(const std::string& filename);
 
     /**
         Saves all stored data out into a binary stream.
@@ -87,6 +89,7 @@ public:
     void load(InputStream& stream);
 
     struct ObjectDataStruct {
+        bool     enabled;                                             ///< is this unit/structure available?
         Sint32   hitpoints;                                           ///< what is the maximum health of this unit/structure?
         Sint32   price;                                               ///< how much does this structure cost?
         Sint32   power;                                               ///< how much power do this structure require. Wind traps have negative values because they produce power?
@@ -110,8 +113,9 @@ public:
 private:
 
     int loadIntValue(const INIFile& objectDataFile, const std::string& section, const std::string& key, char houseChar, int defaultValue = 0);
+    bool loadBoolValue(const INIFile& objectDataFile, const std::string& section, const std::string& key, char houseChar, bool defaultValue = false);
     FixPoint loadFixPointValue(const INIFile& objectDataFile, const std::string& section, const std::string& key, char houseChar, FixPoint defaultValue = 0);
-    std::string loadStringValue(const INIFile& objectDataFile, const std::string& section, const std::string& key, char houseChar, std::string defaultValue = "");
+    std::string loadStringValue(const INIFile& objectDataFile, const std::string& section, const std::string& key, char houseChar, const std::string& defaultValue = "");
     int loadItemID(const INIFile& objectDataFile, const std::string& section, const std::string& key, char houseChar, int defaultValue = ItemID_Invalid);
     std::bitset<Structure_LastID> loadPrerequisiteStructuresSet(const INIFile& objectDataFile, const std::string& section, const std::string& key, char houseChar, std::bitset<Structure_LastID> defaultValue = std::bitset<Structure_LastID>());
 };

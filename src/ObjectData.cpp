@@ -33,6 +33,7 @@ ObjectData::ObjectData()
     // set default values
     for(int i=0;i<Num_ItemID;i++) {
         for(int h=0;h<NUM_HOUSES;h++) {
+            data[i][h].enabled = false;
             data[i][h].hitpoints = 0;
             data[i][h].price = 0;
             data[i][h].power = 0;
@@ -57,7 +58,7 @@ ObjectData::~ObjectData()
 {
 }
 
-void ObjectData::loadFromINIFile(std::string filename)
+void ObjectData::loadFromINIFile(const std::string& filename)
 {
     SDL_RWops *file = pFileManager->openFile(filename);
     INIFile objectDataFile(file);
@@ -66,6 +67,7 @@ void ObjectData::loadFromINIFile(std::string filename)
     // load default structure values
     ObjectDataStruct structureDefaultData[NUM_HOUSES];
     for(int h=0;h<NUM_HOUSES;h++) {
+        structureDefaultData[h].enabled = loadBoolValue(objectDataFile, "default structure", "Enabled", houseChar[h]);
         structureDefaultData[h].hitpoints = loadIntValue(objectDataFile, "default structure", "HitPoints", houseChar[h]);
         structureDefaultData[h].price = loadIntValue(objectDataFile, "default structure", "Price", houseChar[h]);
         structureDefaultData[h].power = loadIntValue(objectDataFile, "default structure", "Power", houseChar[h]);
@@ -87,6 +89,7 @@ void ObjectData::loadFromINIFile(std::string filename)
     // load default unit values
     ObjectDataStruct unitDefaultData[NUM_HOUSES];
     for(int h=0;h<NUM_HOUSES;h++) {
+        unitDefaultData[h].enabled = loadBoolValue(objectDataFile, "default unit", "Enabled", houseChar[h]);
         unitDefaultData[h].hitpoints = loadIntValue(objectDataFile, "default unit", "HitPoints", houseChar[h]);
         unitDefaultData[h].price = loadIntValue(objectDataFile, "default unit", "Price", houseChar[h]);
         unitDefaultData[h].power = loadIntValue(objectDataFile, "default unit", "Power", houseChar[h]);
@@ -116,9 +119,8 @@ void ObjectData::loadFromINIFile(std::string filename)
         }
     }
 
-    INIFile::SectionIterator iter;
-    for(iter = objectDataFile.begin(); iter != objectDataFile.end(); ++iter) {
-        std::string sectionName = iter->getSectionName();
+    for(INIFile::Section& section : objectDataFile) {
+        const std::string& sectionName = section.getSectionName();
 
         if(sectionName == "" || sectionName == "default structure" || sectionName == "default unit") {
             continue;
@@ -127,7 +129,7 @@ void ObjectData::loadFromINIFile(std::string filename)
         Uint32 itemID = getItemIDByName(sectionName);
 
         if(itemID == ItemID_Invalid) {
-            std::cerr << "ObjectData::ObjectData(): \"" << sectionName << "\" is no valid unit/structure name!" << std::endl;
+            SDL_Log("ObjectData::ObjectData(): '%s' is no valid unit/structure name!", sectionName.c_str());
             continue;
         }
 
@@ -135,6 +137,7 @@ void ObjectData::loadFromINIFile(std::string filename)
 
             ObjectDataStruct& defaultData = isStructure(itemID) ? structureDefaultData[h] : unitDefaultData[h];
 
+            data[itemID][h].enabled = loadBoolValue(objectDataFile, sectionName, "Enabled", houseChar[h], defaultData.enabled);
             data[itemID][h].hitpoints = loadIntValue(objectDataFile, sectionName, "HitPoints", houseChar[h], defaultData.hitpoints);
             data[itemID][h].price = loadIntValue(objectDataFile, sectionName, "Price", houseChar[h], defaultData.price);
             data[itemID][h].power = loadIntValue(objectDataFile, sectionName, "Power", houseChar[h], defaultData.power);
@@ -159,6 +162,7 @@ void ObjectData::save(OutputStream& stream) const
 {
     for(int i=0;i<Num_ItemID;i++) {
         for(int h=0;h<NUM_HOUSES;h++) {
+            stream.writeBool(data[i][h].enabled);
             stream.writeSint32(data[i][h].hitpoints);
             stream.writeSint32(data[i][h].price);
             stream.writeSint32(data[i][h].power);
@@ -183,6 +187,7 @@ void ObjectData::load(InputStream& stream)
 {
     for(int i=0;i<Num_ItemID;i++) {
         for(int h=0;h<NUM_HOUSES;h++) {
+            data[i][h].enabled = stream.readBool();
             data[i][h].hitpoints = stream.readSint32();
             data[i][h].price = stream.readSint32();
             data[i][h].power = stream.readSint32();
@@ -212,6 +217,15 @@ int ObjectData::loadIntValue(const INIFile& objectDataFile, const std::string& s
     }
 }
 
+bool ObjectData::loadBoolValue(const INIFile& objectDataFile, const std::string& section, const std::string& key, char houseChar, bool defaultValue) {
+    std::string specializedKey = key + "(" + houseChar + ")";
+    if(objectDataFile.hasKey(section, specializedKey)) {
+        return objectDataFile.getBoolValue(section, specializedKey, defaultValue);
+    } else {
+        return objectDataFile.getBoolValue(section, key, defaultValue);
+    }
+}
+
 FixPoint ObjectData::loadFixPointValue(const INIFile& objectDataFile, const std::string& section, const std::string& key, char houseChar, FixPoint defaultValue) {
     std::string specializedKey = key + "(" + houseChar + ")";
     if(objectDataFile.hasKey(section, specializedKey)) {
@@ -221,7 +235,7 @@ FixPoint ObjectData::loadFixPointValue(const INIFile& objectDataFile, const std:
     }
 }
 
-std::string ObjectData::loadStringValue(const INIFile& objectDataFile, const std::string& section, const std::string& key, char houseChar, std::string defaultValue) {
+std::string ObjectData::loadStringValue(const INIFile& objectDataFile, const std::string& section, const std::string& key, char houseChar, const std::string& defaultValue) {
     std::string specializedKey = key + "(" + houseChar + ")";
     if(objectDataFile.hasKey(section, specializedKey)) {
         return objectDataFile.getStringValue(section, specializedKey, defaultValue);
@@ -242,7 +256,7 @@ int ObjectData::loadItemID(const INIFile& objectDataFile, const std::string& sec
     int itemID = getItemIDByName(strItem);
 
     if(itemID == ItemID_Invalid) {
-        fprintf(stderr, "Warning: Cannot read object data from section '%s', key '%s': '%s' is no valid structure/unit name!\n", section.c_str(), key.c_str(), strItem.c_str() );
+        SDL_Log("Warning: Cannot read object data from section '%s', key '%s': '%s' is no valid structure/unit name!", section.c_str(), key.c_str(), strItem.c_str() );
         return defaultValue;
     }
 
@@ -263,13 +277,12 @@ std::bitset<Structure_LastID> ObjectData::loadPrerequisiteStructuresSet(const IN
 
     std::vector<std::string> strItemList = splitString(strList);
 
-    std::vector<std::string>::const_iterator iter;
-    for(iter = strItemList.begin(); iter != strItemList.end(); ++iter) {
-        std::string strItem = trim(*iter);
+    for(const std::string& strItem : strItemList) {
+        std::string strItem2 = trim(strItem);
 
-        int itemID = getItemIDByName(strItem);
+        int itemID = getItemIDByName(strItem2);
         if(itemID == ItemID_Invalid || !isStructure(itemID)) {
-            fprintf(stderr, "Warning: Cannot read object data from section '%s', key '%s': '%s' is no valid structure name!\n", section.c_str(), key.c_str(), strItem.c_str() );
+            SDL_Log("Warning: Cannot read object data from section '%s', key '%s': '%s' is no valid structure name!", section.c_str(), key.c_str(), strItem2.c_str() );
             return defaultValue;
         }
 

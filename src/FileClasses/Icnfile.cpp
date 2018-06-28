@@ -54,31 +54,25 @@ Icnfile::Icnfile(SDL_RWops* icnRWop, SDL_RWops* mapRWop, int freesrc)
     uint8_t* pMapFiledata = nullptr;
 
     try {
-        int icnFilesize = SDL_RWseek(icnRWop,0,SEEK_END);
-        if(icnFilesize <= 0) {
+        Sint64 icnEndOffset = SDL_RWsize(icnRWop);
+        if(icnEndOffset <= 0) {
             THROW(std::runtime_error, "Icnfile::Icnfile(): Cannot determine size of this *.icn-File!");
         }
-        pIcnFiledata = new uint8_t[icnFilesize];
 
-        if(SDL_RWseek(icnRWop,0,SEEK_SET) != 0) {
-            THROW(std::runtime_error, "Icnfile::Icnfile(): Seeking in this *.icn-File failed!");
-        }
+        size_t icnFilesize = static_cast<size_t>(icnEndOffset);
+        pIcnFiledata = new uint8_t[icnFilesize];
 
         if(SDL_RWread(icnRWop, &pIcnFiledata[0], icnFilesize, 1) != 1) {
             THROW(std::runtime_error, "Icnfile::Icnfile(): Reading this *.icn-File failed!");
         }
 
-
-        int mapFilesize = SDL_RWseek(mapRWop,0,SEEK_END);
-        if(mapFilesize <= 0) {
+        Sint64 mapEndOffset = SDL_RWsize(mapRWop);
+        if(mapEndOffset <= 0) {
             THROW(std::runtime_error, "Icnfile::Icnfile(): Cannot determine size of this *.map-File!");
         }
 
+        size_t mapFilesize = static_cast<size_t>(mapEndOffset);
         pMapFiledata = new uint8_t[mapFilesize];
-
-        if(SDL_RWseek(mapRWop,0,SEEK_SET) != 0) {
-            THROW(std::runtime_error, "Icnfile::Icnfile(): Seeking in this *.map-File failed!");
-        }
 
         if(SDL_RWread(mapRWop, &pMapFiledata[0], mapFilesize, 1) != 1) {
             THROW(std::runtime_error, "Icnfile::Icnfile(): Reading this *.map-File failed!");
@@ -91,7 +85,7 @@ Icnfile::Icnfile(SDL_RWops* icnRWop, SDL_RWops* mapRWop, int freesrc)
 
         Uint16 numTilesets = SDL_SwapLE16( *((Uint16 *) pMapFiledata));
 
-        if(mapFilesize < numTilesets * 2) {
+        if(mapFilesize < static_cast<size_t>(numTilesets * 2)) {
             THROW(std::runtime_error, "Icnfile::Icnfile(): This *.map-File is too short!");
         }
 

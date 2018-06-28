@@ -229,6 +229,11 @@ void Bullet::init()
             THROW(std::domain_error, "Unknown Bullet type %d!", bulletID);
         } break;
     }
+
+    if(airAttack) {
+        // double radius to hit fast-moving air units
+        damageRadius *= 2;
+    }
 }
 
 
@@ -265,7 +270,7 @@ void Bullet::save(OutputStream& stream) const
 }
 
 
-void Bullet::blitToScreen()
+void Bullet::blitToScreen() const
 {
     int imageW = getWidth(graphic[currentZoomlevel])/numFrames;
     int imageH = getHeight(graphic[currentZoomlevel]);

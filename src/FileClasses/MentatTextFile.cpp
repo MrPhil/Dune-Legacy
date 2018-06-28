@@ -32,17 +32,15 @@ MentatTextFile::MentatTextFile(SDL_RWops* rwop) {
         THROW(std::invalid_argument, "MentatTextFile:MentatTextFile(): rwop == nullptr!");
     }
 
-    int mentatTextFilesize = SDL_RWseek(rwop,0,SEEK_END);
-    if(mentatTextFilesize <= 0) {
+    Sint64 endOffset = SDL_RWsize(rwop);
+    if(endOffset < 0) {
         THROW(std::runtime_error, "MentatTextFile:MentatTextFile(): Cannot determine size of this file!");
     }
 
+    size_t mentatTextFilesize = static_cast<size_t>(endOffset);
+
     if(mentatTextFilesize < 20) {
         THROW(std::runtime_error, "MentatTextFile:MentatTextFile(): No valid mentat textfile: File too small!");
-    }
-
-    if(SDL_RWseek(rwop,0,SEEK_SET) != 0) {
-        THROW(std::runtime_error, "MentatTextFile:MentatTextFile(): Seeking in this mentat textfile failed!");
     }
 
     if( (pFiledata = (unsigned char*) malloc(mentatTextFilesize)) == nullptr) {
@@ -61,7 +59,7 @@ MentatTextFile::MentatTextFile(SDL_RWops* rwop) {
 
     Uint32 formSectionSize = SDL_SwapBE32(*((Uint32*) (pFiledata+4)));
 
-    if((int) formSectionSize + 8 != mentatTextFilesize) {
+    if(formSectionSize + 8 != mentatTextFilesize) {
         free(pFiledata);
         THROW(std::runtime_error, "MentatTextFile:MentatTextFile(): Invalid mentat textfile!");
     }
@@ -88,10 +86,9 @@ MentatTextFile::MentatTextFile(SDL_RWops* rwop) {
 
         int techLevel = *((char*) pCurrentPos + entryLength - 1);
 
-        if((int) entryContentOffset >= mentatTextFilesize) {
+        if(entryContentOffset >= mentatTextFilesize) {
             free(pFiledata);
-            fprintf(stderr, "0x%x\n", entryContentOffset);
-            THROW(std::runtime_error, "MentatTextFile:MentatTextFile(): Entry offset beyond file end!");
+            THROW(std::runtime_error, "MentatTextFile:MentatTextFile(): Entry offset 0x%X beyond file end!", entryContentOffset);
         }
 
         std::string compressedEntryContent((char*) pFiledata + entryContentOffset);

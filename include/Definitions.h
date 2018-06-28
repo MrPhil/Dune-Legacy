@@ -30,7 +30,7 @@
 #define DEFAULT_METASERVER  "http://dunelegacy.sourceforge.net/metaserver/metaserver.php"
 
 #define SAVEMAGIC           8675309
-#define SAVEGAMEVERSION     9641
+#define SAVEGAMEVERSION     9642
 
 #define MAX_PLAYERNAMELENGHT    24
 
@@ -55,6 +55,7 @@
 #define MAX_YSIZE 256
 
 #define BUILDRANGE 2
+#define MIN_CARRYALL_LIFT_DISTANCE 6
 #define STRUCTURE_ANIMATIONTIMER 31
 
 #define RANDOMSPICEMIN (111 - 37)        //how much spice on each spice tile
@@ -73,7 +74,10 @@
 #define INVALID_POS (-1)
 #define INVALID (-1)
 
+#define NUM_TEAMS 7
+
 #define DEVIATIONTIME MILLI2CYCLES(120*1000)
+#define TRACKSTIME MILLI2CYCLES((1 << 16))
 #define HARVESTERMAXSPICE 700
 #define HARVESTSPEED FixPt(0,1344)
 #define BADLYDAMAGEDRATIO FixPt(0,5)                //if health/getMaxHealth() < this, damage will become bad - smoke and shit

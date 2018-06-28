@@ -43,18 +43,15 @@ SDL_Surface * LoadCPS_RW(SDL_RWops* RWop, int freesrc)
     SDL_Surface *pic = nullptr;
 
     try {
-        Uint32 CpsFilesize = SDL_RWseek(RWop,0,SEEK_END);
-        if(CpsFilesize <= 0) {
+        Sint64 endOffset = SDL_RWsize(RWop);
+        if(endOffset <= 0) {
             THROW(std::runtime_error, "LoadCPS_RW(): Cannot determine size of this *.cps-File!");
         }
 
-        if(SDL_RWseek(RWop,0,SEEK_SET) != 0) {
-            THROW(std::runtime_error, "LoadCPS_RW(): Seeking in this *.cps-File failed!");
-        }
+        size_t cpsFilesize = static_cast<size_t>(endOffset);
+        pFiledata = new uint8_t[cpsFilesize];
 
-        pFiledata = new uint8_t[CpsFilesize];
-
-        if(SDL_RWread(RWop, pFiledata, CpsFilesize, 1) != 1) {
+        if(SDL_RWread(RWop, pFiledata, cpsFilesize, 1) != 1) {
             THROW(std::runtime_error, "LoadCPS_RW(): Reading this *.cps-File failed!");
         }
 
@@ -104,7 +101,7 @@ SDL_Surface * LoadCPS_RW(SDL_RWops* RWop, int freesrc)
 
         return pic;
     } catch (std::exception &e) {
-        fprintf(stderr, "%s\n", e.what());
+        SDL_Log("Exception: %s", e.what());
 
         delete [] pFiledata;
         delete [] pImageOut;

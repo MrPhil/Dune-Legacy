@@ -105,6 +105,7 @@ void InfantryBase::assignToMap(const Coord& pos) {
     if(currentGameMap->tileExists(pos)) {
         oldTilePosition = tilePosition;
         tilePosition = currentGameMap->getTile(pos)->assignInfantry(getObjectID());
+        currentGameMap->viewMap(owner->getTeam(), pos, getViewRange());
     }
 }
 
@@ -239,12 +240,11 @@ void InfantryBase::checkPos() {
                     for(int i = capturedStructureLocation.x; i < capturedStructureLocation.x + pCapturedStructure->getStructureSizeX(); i++) {
                         for(int j = capturedStructureLocation.y; j < capturedStructureLocation.y + pCapturedStructure->getStructureSizeY(); j++) {
 
-                            // make a copy of infantry list to avoid problems of modifing the list during iteration (!)
+                            // make a copy of infantry list to avoid problems of modifying the list during iteration (!)
                             const std::list<Uint32> infantryList = currentGameMap->getTile(i,j)->getInfantryList();
-                            std::list<Uint32>::const_iterator iter;
-                            for(iter = infantryList.begin(); iter != infantryList.end(); ++iter) {
-                                if(*iter != getObjectID()) {
-                                    ObjectBase* pObject = currentGame->getObjectManager().getObject(*iter);
+                            for(const Uint32& infantryID : infantryList) {
+                                if(infantryID != getObjectID()) {
+                                    ObjectBase* pObject = currentGame->getObjectManager().getObject(infantryID);
                                     if(pObject->getLocation() == Coord(i,j)) {
                                         pObject->destroy();
                                     }
@@ -360,7 +360,7 @@ void InfantryBase::destroy() {
 }
 
 void InfantryBase::move() {
-    if(!moving && !justStoppedMoving && currentGame->randomGen.rand(0,40) == 0) {
+    if(!moving && !justStoppedMoving && (((currentGame->getGameCycleCount() + getObjectID()) % 512) == 0)) {
         currentGameMap->viewMap(owner->getTeam(), location, getViewRange());
     }
 
@@ -448,7 +448,7 @@ void InfantryBase::setLocation(int xPos, int yPos) {
 
 void InfantryBase::setSpeeds() {
     if(oldTilePosition == INVALID_POS) {
-        fprintf(stderr, "InfantryBase::setSpeeds(): Infantry tile position  == INVALID_POS.\n");
+        SDL_Log("Warning: InfantryBase::setSpeeds(): Infantry tile position == INVALID_POS.");
     } else if(tilePosition == oldTilePosition) {
         // havent changed infantry position
         GroundUnit::setSpeeds();
@@ -490,9 +490,9 @@ void InfantryBase::squash() {
 }
 
 void InfantryBase::playConfirmSound() {
-    soundPlayer->playSound((Sound_enum) getRandomOf(2,MovingOut,InfantryOut));
+    soundPlayer->playVoice((Voice_enum) getRandomOf(2,MovingOut,InfantryOut), getOwner()->getHouseID());
 }
 
 void InfantryBase::playSelectSound() {
-    soundPlayer->playSound(YesSir);
+    soundPlayer->playVoice(YesSir, getOwner()->getHouseID());
 }

@@ -5,7 +5,6 @@ ACLOCAL_AMFLAGS = -I m4
 EXTRA_DIST = include \
              IDE/codeblocks/dunelegacy.cbp \
              IDE/xCode \
-             IDE/xCode3 \
              debian/changelog \
              debian/compat \
              debian/control \
@@ -15,21 +14,7 @@ EXTRA_DIST = include \
              debian/rules \
              data/LEGACY.PAK \
              data/OPENSD2.PAK \
-             data/atre.pak \
-             data/dune.pak \
-             data/english.pak \
-             data/finale.pak \
-             data/hark.pak \
-             data/intro.pak \
-             data/introvoc.pak \
-             data/locale \
-             data/maps \
-             data/mentat.pak \
-             data/merc.pak \
-             data/ordos.pak \
-             data/scenario.pak \
-             data/sound.pak \
-             data/voc.pak \
+             data/GFXHD.PAK \
              data/Dune2-Versions.txt \
              data/maps \
              data/locale \
@@ -49,7 +34,7 @@ EXTRA_DIST = include \
              dunelegacy.desktop \
              MacOSX \
              dunelegacy.spec \
-             dunelegacy-0.96.3.ebuild \
+             dunelegacy-0.96.4.ebuild \
              dunelegacy.nsi \
              nsis-background1.bmp \
              nsis-background2.bmp \
@@ -84,4 +69,3 @@ uninstall-local:
 dist-hook:
 	rm -rf `find $(distdir) -name .svn`
 	rm -rf $(distdir)/IDE/xCode/Dune\ Legacy.xcodeproj/.svn
-	rm -rf $(distdir)/IDE/xCode3/Dune\ Legacy.xcodeproj/.svn

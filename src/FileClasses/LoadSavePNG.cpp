@@ -40,15 +40,12 @@ SDL_Surface* LoadPNG_RW(SDL_RWops* RWop, int freesrc) {
 
     try {
         // read complete file into memory
-        size_t filesize = SDL_RWseek(RWop,0,SEEK_END);
-        if(filesize <= 0) {
+        Sint64 endOffset = SDL_RWsize(RWop);
+        if(endOffset <= 0) {
             THROW(std::runtime_error, "LoadPNG_RW(): Cannot determine size of this *.png-File!");
         }
 
-        if(SDL_RWseek(RWop,0,SEEK_SET) != 0) {
-            THROW(std::runtime_error, "LoadPNG_RW(): Seeking in this *.png-File failed!");
-        }
-
+        size_t filesize = static_cast<size_t>(endOffset);
         pFiledata = (unsigned char*) malloc(filesize);
 
         if(SDL_RWread(RWop, pFiledata, filesize, 1) != 1) {
@@ -140,7 +137,7 @@ SDL_Surface* LoadPNG_RW(SDL_RWops* RWop, int freesrc) {
 
         return pic;
     } catch (std::exception &e) {
-        fprintf(stderr, "%s\n", e.what());
+        SDL_Log("%s", e.what());
 
         free(pFiledata);
         free(pImageOut);
@@ -191,7 +188,7 @@ int SavePNG_RW(SDL_Surface* surface, SDL_RWops* RWop, int freedst) {
     unsigned int error = lodepng_encode32(&ppngFile, &pngFileSize, pImage, width, height);
     free(pImage);
     if(error != 0) {
-        fprintf(stderr, "%s\n", lodepng_error_text(error));
+        SDL_Log("%s", lodepng_error_text(error));
         if(freedst) {
             SDL_RWclose(RWop);
         }
@@ -199,7 +196,7 @@ int SavePNG_RW(SDL_Surface* surface, SDL_RWops* RWop, int freedst) {
     }
 
     if(SDL_RWwrite(RWop, ppngFile, 1, pngFileSize) != pngFileSize) {
-        fprintf(stderr, "%s\n", SDL_GetError());
+        SDL_Log("%s", SDL_GetError());
         if(freedst) {
             SDL_RWclose(RWop);
         }

@@ -28,59 +28,63 @@
 #include <string.h>
 
 GameInitSettings::GameInitSettings()
- : gameType(GAMETYPE_INVALID), houseID(HOUSE_INVALID), mission(0), multiplePlayersPerHouse(false) {
+ : gameType(GameType::Invalid), houseID(HOUSE_INVALID), mission(0), alreadyPlayedRegions(0), multiplePlayersPerHouse(false) {
     randomSeed = rand();
 }
 
 GameInitSettings::GameInitSettings(HOUSETYPE newHouseID, const SettingsClass::GameOptionsClass& gameOptions)
- : gameType(GAMETYPE_CAMPAIGN), houseID(newHouseID), mission(1), multiplePlayersPerHouse(false), gameOptions(gameOptions) {
+ : gameType(GameType::Campaign), houseID(newHouseID), mission(1), alreadyPlayedRegions(0), alreadyShownTutorialHints(0), multiplePlayersPerHouse(false), gameOptions(gameOptions) {
     filename = getScenarioFilename(houseID, mission);
     randomSeed = rand();
 }
 
-GameInitSettings::GameInitSettings(const GameInitSettings& prevGameInitInfoClass, int nextMission) {
+GameInitSettings::GameInitSettings(const GameInitSettings& prevGameInitInfoClass, int nextMission, Uint32 alreadyPlayedRegions, Uint32 alreadyShownTutorialHints) {
     *this = prevGameInitInfoClass;
     mission = nextMission;
+    this->alreadyPlayedRegions = alreadyPlayedRegions;
+    this->alreadyShownTutorialHints = alreadyShownTutorialHints;
     filename = getScenarioFilename(houseID, mission);
     randomSeed = rand();
 }
 
 GameInitSettings::GameInitSettings(HOUSETYPE newHouseID, int newMission, const SettingsClass::GameOptionsClass& gameOptions)
- : gameType(GAMETYPE_SKIRMISH), houseID(newHouseID), mission(newMission), multiplePlayersPerHouse(false), gameOptions(gameOptions) {
+ : gameType(GameType::Skirmish), houseID(newHouseID), mission(newMission), alreadyPlayedRegions(0), alreadyShownTutorialHints(0xFFFFFFFF), multiplePlayersPerHouse(false), gameOptions(gameOptions) {
     filename = getScenarioFilename(houseID, mission);
     randomSeed = rand();
 }
 
 GameInitSettings::GameInitSettings(const std::string& mapfile, const std::string& filedata, bool multiplePlayersPerHouse, const SettingsClass::GameOptionsClass& gameOptions)
- : gameType(GAMETYPE_CUSTOM), houseID(HOUSE_INVALID), mission(0), filename(mapfile), filedata(filedata), multiplePlayersPerHouse(multiplePlayersPerHouse), gameOptions(gameOptions) {
+ : gameType(GameType::CustomGame), houseID(HOUSE_INVALID), mission(0), alreadyPlayedRegions(0), alreadyShownTutorialHints(0xFFFFFFFF), filename(mapfile), filedata(filedata), multiplePlayersPerHouse(multiplePlayersPerHouse), gameOptions(gameOptions) {
     randomSeed = rand();
 }
 
 GameInitSettings::GameInitSettings(const std::string& mapfile, const std::string& filedata, const std::string& serverName, bool multiplePlayersPerHouse, const SettingsClass::GameOptionsClass& gameOptions)
- : gameType(GAMETYPE_CUSTOM_MULTIPLAYER), houseID(HOUSE_INVALID), mission(0), filename(mapfile), filedata(filedata), servername(serverName), multiplePlayersPerHouse(multiplePlayersPerHouse), gameOptions(gameOptions) {
+ : gameType(GameType::CustomMultiplayer), houseID(HOUSE_INVALID), mission(0), alreadyPlayedRegions(0), alreadyShownTutorialHints(0xFFFFFFFF), filename(mapfile), filedata(filedata), servername(serverName), multiplePlayersPerHouse(multiplePlayersPerHouse), gameOptions(gameOptions) {
     randomSeed = rand();
 }
 
 GameInitSettings::GameInitSettings(const std::string& savegame)
- : gameType(GAMETYPE_LOAD_SAVEGAME), houseID(HOUSE_INVALID), mission(0) {
+ : gameType(GameType::LoadSavegame), houseID(HOUSE_INVALID), mission(0), alreadyPlayedRegions(0), alreadyShownTutorialHints(0xFFFFFFFF) {
     checkSaveGame(savegame);
     filename = savegame;
 }
 
 GameInitSettings::GameInitSettings(const std::string& savegame, const std::string& filedata, const std::string& serverName)
- : gameType(GAMETYPE_LOAD_MULTIPLAYER), houseID(HOUSE_INVALID), mission(0), filename(savegame), filedata(filedata), servername(serverName) {
+ : gameType(GameType::LoadMultiplayer), houseID(HOUSE_INVALID), mission(0), alreadyPlayedRegions(0), alreadyShownTutorialHints(0xFFFFFFFF), filename(savegame), filedata(filedata), servername(serverName) {
     IMemoryStream memStream(filedata.c_str(), filedata.size());
     checkSaveGame(memStream);
 }
 
 GameInitSettings::GameInitSettings(InputStream& stream) {
-    gameType = (GAMETYPE) stream.readSint8();
-    houseID = (HOUSETYPE) stream.readSint8();
+    gameType = static_cast<GameType>(stream.readSint8());
+    houseID = static_cast<HOUSETYPE>(stream.readSint8());
 
     filename = stream.readString();
     filedata = stream.readString();
 
     mission = stream.readUint8();
+    alreadyPlayedRegions = stream.readUint32();
+    alreadyShownTutorialHints = stream.readUint32();
     randomSeed = stream.readUint32();
 
     multiplePlayersPerHouse = stream.readBool();
@@ -107,13 +111,15 @@ GameInitSettings::~GameInitSettings() {
 }
 
 void GameInitSettings::save(OutputStream& stream) const {
-    stream.writeSint8(gameType);
+    stream.writeSint8(static_cast<Sint8>(gameType));
     stream.writeSint8(houseID);
 
     stream.writeString(filename);
     stream.writeString(filedata);
 
     stream.writeUint8(mission);
+    stream.writeUint32(alreadyPlayedRegions);
+    stream.writeUint32(alreadyShownTutorialHints);
     stream.writeUint32(randomSeed);
 
     stream.writeBool(multiplePlayersPerHouse);
@@ -131,9 +137,8 @@ void GameInitSettings::save(OutputStream& stream) const {
     stream.writeSint32(gameOptions.maximumNumberOfUnitsOverride);
 
     stream.writeUint32(houseInfoList.size());
-    HouseInfoList::const_iterator iter;
-    for(iter = houseInfoList.begin(); iter != houseInfoList.end(); ++iter) {
-        iter->save(stream);
+    for(const HouseInfo& houseInfo : houseInfoList) {
+        houseInfo.save(stream);
     }
 }
 

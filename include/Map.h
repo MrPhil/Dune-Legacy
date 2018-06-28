@@ -22,6 +22,7 @@
 #include <misc/InputStream.h>
 #include <misc/OutputStream.h>
 #include <misc/exceptions.h>
+#include <misc/Random.h>
 
 #include <stdio.h>
 
@@ -45,8 +46,8 @@ public:
     void spiceRemoved(const Coord& coord);
     void selectObjects(int houseID, int x1, int y1, int x2, int y2, int realX, int realY, bool objectARGMode);
 
-    void viewMap(int playerTeam, const Coord& location, int maxViewRange);
-    void viewMap(int playerTeam, int x, int y, int maxViewRange) {
+    void viewMap(const int playerTeam, const Coord& location, const int maxViewRange);
+    void viewMap(const int playerTeam, int x, int y, const int maxViewRange) {
         viewMap(playerTeam, Coord(x,y), maxViewRange);
     }
 
@@ -56,7 +57,7 @@ public:
     bool isWithinBuildRange(int x, int y, const House* pHouse) const;
     int getPosAngle(const Coord& source, const Coord& pos) const;
     Coord findClosestEdgePoint(const Coord& origin, const Coord& buildingSize) const;
-    Coord findDeploySpot(UnitBase* pUnit, const Coord& origin, const Coord& gatherPoint = Coord::Invalid(), const Coord& buildingSize = Coord(0,0)) const;//building size is num squares
+    Coord findDeploySpot(UnitBase* pUnit, const Coord& origin, Random& randomGen, const Coord& gatherPoint = Coord::Invalid(), const Coord& buildingSize = Coord(0,0)) const; //building size is num squares
 
     void createSpiceField(Coord location, int radius, bool centerIsThickSpice = false);
 

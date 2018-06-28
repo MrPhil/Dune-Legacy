@@ -33,9 +33,8 @@ class FileManager {
 public:
     /**
         Constructor.
-        \param saveMode if true, every loading error is ignored
     */
-    explicit FileManager(bool saveMode = false);
+    explicit FileManager();
 
     FileManager(const FileManager& fileManager) = delete;
 
@@ -55,11 +54,11 @@ public:
         \return a rwop to read the content of the specified file. Use SDL_RWclose() to close the file after usage.
 
     */
-    SDL_RWops* openFile(std::string filename);
+    SDL_RWops* openFile(const std::string& filename);
 
-    bool exists(std::string filename) const;
+    bool exists(const std::string& filename) const;
 private:
-    std::string md5FromFilename(std::string filename);
+    std::string md5FromFilename(const std::string& filename);
 
     std::vector<Pakfile*> pakFiles;
 };
